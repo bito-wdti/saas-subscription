@@ -81,13 +81,36 @@ export const createPaymentIntent = async (amount, customerId, currency = 'usd') 
 };
 
 /**
+ * Buscar produto no Stripe por ID
+ * @param {string} productId - ID do produto no Stripe
+ * @returns {Promise<object>} Dados do produto
+ */
+export const getStripeProduct = async (productId) => {
+  try {
+    const product = await stripe.products.retrieve(productId);
+    return product;
+  } catch (error) {
+    console.error('❌ Erro ao buscar produto do Stripe:', error.message);
+    throw error;
+  }
+};
+
+/**
  * Criar uma assinatura (subscription) no Stripe
  * @param {string} customerId - ID do cliente no Stripe
- * @param {string} priceId - ID do preço/plano no Stripe
+ * @param {string} product_id - ID do produto no Stripe (para obter o default_price)
  * @returns {Promise<object>} Subscription criada
  */
-export const createSubscription = async (customerId, priceId) => {
+export const createSubscription = async (customerId, product_id) => {
   try {
+    // Buscar o produto para obter o default_price
+    const product = await getStripeProduct(product_id);
+    const priceId = product.default_price;
+
+    if (!priceId) {
+      throw new Error('Produto não possui default_price definido');
+    }
+
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
@@ -168,6 +191,79 @@ export const constructWebhookEvent = (body, sig) => {
     return event;
   } catch (error) {
     console.error('❌ Erro ao validar webhook do Stripe:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Listar produtos do Stripe
+ * @param {number} limit - Número máximo de produtos a retornar (padrão: 10)
+ * @returns {Promise<Array>} Lista de produtos
+ */
+export const listStripeProducts = async (limit = 10) => {
+  try {
+    const products = await stripe.products.list({
+      limit,
+    });
+    return products.data;
+  } catch (error) {
+    console.error('❌ Erro ao listar produtos do Stripe:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Criar um payment method de cartão para um cliente
+ * @param {string} customerId - ID do cliente no Stripe
+ * @param {object} cardData - Dados do cartão com: card_number, exp_month, exp_year, cvc
+ * @returns {Promise<object>} Payment method criado
+ */
+export const createPaymentMethod = async (customerId, cardData) => {
+  try {
+    const { card_number, exp_month, exp_year, cvc } = cardData;
+
+    if (!card_number || !exp_month || !exp_year || !cvc) {
+      throw new Error('Dados do cartão incompletos: card_number, exp_month, exp_year e cvc são obrigatórios');
+    }
+
+    const paymentMethod = await stripe.paymentMethods.create({
+      type: 'card',
+      card: {
+        number: card_number,
+        exp_month: parseInt(exp_month),
+        exp_year: parseInt(exp_year),
+        cvc,
+      },
+    });
+
+    // Anexar o payment method ao cliente
+    await stripe.paymentMethods.attach(paymentMethod.id, {
+      customer: customerId,
+    });
+
+    return paymentMethod;
+  } catch (error) {
+    console.error('❌ Erro ao criar payment method:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Atualizar o default payment method de um cliente
+ * @param {string} customerId - ID do cliente no Stripe
+ * @param {string} paymentMethodId - ID do payment method
+ * @returns {Promise<object>} Cliente atualizado
+ */
+export const setDefaultPaymentMethod = async (customerId, paymentMethodId) => {
+  try {
+    const customer = await stripe.customers.update(customerId, {
+      invoice_settings: {
+        default_payment_method: paymentMethodId,
+      },
+    });
+    return customer;
+  } catch (error) {
+    console.error('❌ Erro ao definir default payment method:', error.message);
     throw error;
   }
 };

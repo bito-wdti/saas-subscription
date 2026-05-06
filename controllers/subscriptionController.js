@@ -5,7 +5,7 @@ export const SubscriptionController = {
     // POST /api/subscriptions  [Público - cliente finaliza assinatura]
     create: async (req, res) => {
         try {
-            const { customer_name, customer_email, plan_id, payment_method } = req.body
+            const { customer_name, customer_email, product_id, payment_method } = req.body
             const stripeCustomer = req.stripeCustomer
 
             if (!stripeCustomer) {
@@ -17,11 +17,11 @@ export const SubscriptionController = {
                 )
             }
 
-            if (!plan_id) {
+            if (!product_id) {
                 return sendErrorResponse(
                     res,
                     400,
-                    'O campo plan_id é obrigatório.',
+                    'O campo product_id é obrigatório.',
                     'VALIDATION_ERROR'
                 )
             }
@@ -29,7 +29,7 @@ export const SubscriptionController = {
             const subscription = await SubscriptionModel.create({
                 customer_name,
                 customer_email,
-                plan_id,
+                product_id,
                 payment_method,
                 stripe_customer_id: stripeCustomer.id,
                 stripe_customer: stripeCustomer,
