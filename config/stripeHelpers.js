@@ -267,3 +267,56 @@ export const setDefaultPaymentMethod = async (customerId, paymentMethodId) => {
     throw error;
   }
 };
+
+/**
+ * Criar uma sessão de checkout no Stripe
+ * @param {object} customer - Cliente no Stripe
+ * @param {string} productId - ID do produto no Stripe
+ * @param {string} successUrl - URL de sucesso após checkout
+ * @param {string} cancelUrl - URL de cancelamento
+ * @returns {Promise<object>} Sessão de checkout criada
+ */
+export const createCheckoutSession = async (customer, productId, successUrl, cancelUrl) => {
+  try {
+    // Buscar produto para obter o price_id
+    const product = await getStripeProduct(productId);
+    const priceId = product.default_price;
+
+    if (!priceId) {
+      throw new Error('Produto não possui default_price definido');
+    }
+
+    // Criar sessão de checkout
+    const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription', // Modo assinatura recorrente
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        product_id: productId,
+        customer_email: customer.email,
+        customer_name: customer.name,
+      },
+      allow_promotion_codes: true, // Permitir códigos de desconto
+      billing_address_collection: 'required', // Coletar endereço de cobrança
+      subscription_data: {
+        metadata: {
+          product_id: productId,
+          customer_email: customer.email
+        },
+      },
+    });
+
+    return session;
+  } catch (error) {
+    console.error('❌ Erro ao criar sessão de checkout:', error.message);
+    throw error;
+  }
+};
