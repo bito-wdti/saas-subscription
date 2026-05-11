@@ -21,15 +21,14 @@ O que a API não deve ser capaz de fazer
 
 ## Endpoints
 
-### POST - Subscription
+### POST - Checkout
 
 Dados enviados
-- Número do cartão
-- Código de segurança
-- Nome completo
-- Cpf
+- Email 
+- Nome do cliente (necessário caso o cliente não possua cadastro no Stripe)
+- Id do plano Stripe
 - Periodo 'freetrial'
 
 Resposta esperada
-- 200 OK
-- 500 
+- URL com link para o checkout via Stripe
+- Redirecionamento para o link em caso de sucesso no pagamento, ou link de fracasso no pagamento

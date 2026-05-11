@@ -1,9 +1,9 @@
-import { createStripeCustomer, findStripeCustomerByEmail, createPaymentMethod, setDefaultPaymentMethod } from '../config/stripeHelpers.js';
+import { createStripeCustomer, findStripeCustomerByEmail } from '../config/stripeHelpers.js';
 import { sendErrorResponse } from '../utils/errorHandler.js';
 
 export const stripeCustomerMiddleware = async (req, res, next) => {
   try {
-    const { email, customer_name, name } = req.body;
+    const { email, customer_name } = req.body;
 
     if (!email) {
       return sendErrorResponse(
@@ -17,7 +17,17 @@ export const stripeCustomerMiddleware = async (req, res, next) => {
     let stripeCustomer = await findStripeCustomerByEmail(email);
 
     if (!stripeCustomer) {
-      const customerName = customer_name || name || email;
+
+      if (!customer_name) {
+        return sendErrorResponse(
+          res,
+          400,
+          'O campo customer_name é obrigatório quando não existe um cliente na base de dados Stripe.',
+          'VALIDATION_ERROR'
+        );
+      }
+
+      const customerName = customer_name;
       stripeCustomer = await createStripeCustomer(email, customerName);
     }
 

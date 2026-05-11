@@ -27,7 +27,10 @@ export const checkoutController = {
             return sendSuccessResponse(
                 res,
                 200,
-                { sessionId: checkoutSession.id },
+                {
+                    sessionId: checkoutSession.stripe_checkout_session_id,
+                    url: checkoutSession.stripe_checkout_session.url,
+                },
                 'Sessão de checkout criada com sucesso'
             );
         } catch (error) {
