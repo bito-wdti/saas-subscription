@@ -7,12 +7,12 @@ Conecta SaaS com o sistema de pagamento Stripe para permitir que usuários consi
 Sistema que integre as duas plataformas.
 
 ## Escopo
-A API irá receber os dados do cartão de crédito do usuário da plataforma, repassando os dados para verificação de pagamento que será realizada via Stripe. A API deve fornecer então se a transação foi concluída com sucesso, também deve ser capaz de permitir a opção da plataforma informar um período de testes fornecido para usuários.
+A API irá receber do usuário logado o chamado para realizar o pagamento de um plano de assinatura, a API irá redirecionar o usuário para uma sessão de checkout via Stripe onde ele irá inserir os dados do cartão de crédito, o Stripe armazenará os dados para pagamento recorrente do usuário e a API irá redirecionar o usuário para uma URL de 'compra concluída' ou de 'problema no pagamento'.
 
 O que a API deve ser capaz de fazer
-- Receber dados de compra do usuário
-- Enviar os dados de compra para a API do Stripe processar
-- Retornar status da compra
+- Receber dados do usuário através de token de autenticação
+- Enviar esses dados e redirecionar o usuário para sessão de checkout via Stripe
+- Retornar status da compra através das URLs
 - Ser capaz de receber tempo de 'free trial'
 
 O que a API não deve ser capaz de fazer
@@ -24,8 +24,7 @@ O que a API não deve ser capaz de fazer
 ### POST - Checkout
 
 Dados enviados
-- Email 
-- Nome do cliente (necessário caso o cliente não possua cadastro no Stripe)
+- Token autenticado do usuário logado
 - Id do plano Stripe
 - Periodo 'freetrial'
 
