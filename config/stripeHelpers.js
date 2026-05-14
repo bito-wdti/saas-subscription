@@ -87,14 +87,36 @@ export const getSubscription = async (subscriptionId) => {
 }
 
 /**
+ * Buscar assinatura ativa de um cliente no Stripe
+ * @param {string} customerId - ID do cliente no Stripe
+ * @returns {Promise<object|null>} Assinatura ativa ou null se não existir
+ */
+export const getActiveSubscription = async (customerId) => {
+  try {
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: 'active',
+      limit: 1,
+      expand: ['data.items.data.price.product'],
+    });
+
+    return subscriptions.data.length > 0 ? subscriptions.data[0] : null;
+  } catch (error) {
+    console.error('❌ Erro ao buscar assinatura ativa:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Criar uma sessão de checkout no Stripe
  * @param {object} customer - Cliente no Stripe
  * @param {string} productId - ID do produto no Stripe
  * @param {string} successUrl - URL de sucesso após checkout
  * @param {string} cancelUrl - URL de cancelamento
+ * @param {number} [freeTrial] - Número de dias de período gratuito (opcional)
  * @returns {Promise<object>} Sessão de checkout criada
  */
-export const createCheckoutSession = async (customer, productId, successUrl, cancelUrl) => {
+export const createCheckoutSession = async (customer, productId, successUrl, cancelUrl, freeTrial) => {
   try {
     // Buscar produto para obter o price_id
     const product = await getStripeProduct(productId);
@@ -129,6 +151,7 @@ export const createCheckoutSession = async (customer, productId, successUrl, can
           product_id: productId,
           customer_email: customer.email
         },
+        ...(freeTrial && { trial_period_days: freeTrial }),
       },
     });
 

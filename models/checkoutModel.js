@@ -5,10 +5,10 @@ export const checkoutModel = {
 
     async create(checkout) {
         try {
-            const { stripeCustomer, plan_id, success_url, cancel_url } = checkout;
+            const { stripeCustomer, plan_id, free_trial, success_url, cancel_url } = checkout;
 
             // Criar sessão de checkout no Stripe
-            const session = await createCheckoutSession(stripeCustomer, plan_id, success_url, cancel_url);
+            const session = await createCheckoutSession(stripeCustomer, plan_id, success_url, cancel_url, free_trial);
 
             // Salvar registro localmente
             const record = {
